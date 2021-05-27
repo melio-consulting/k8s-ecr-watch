@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "k8s-ecr-watch.fullname" . }}
+data:
+  {{- with .Values.configmap.credentials }}
+  credentials: |-
+{{ tpl . $ | indent 4 }}
+  {{- end}}
+  {{- with .Values.configmap.config }}
+  config: |-
+{{ tpl . $ | indent 4 }}
+  {{- end }}

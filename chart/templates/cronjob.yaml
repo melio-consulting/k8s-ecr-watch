@@ -1,0 +1,41 @@
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ include "k8s-ecr-watch.fullname" . }}
+  labels:
+    {{- include "k8s-ecr-watch.labels" . | nindent 4 }}
+spec:
+  schedule: "{{ .Values.schedule }}"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          serviceAccountName: {{ include "k8s-ecr-watch.serviceAccountName" . }}
+          containers:
+          - name: {{ .Chart.Name }}
+            image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+            imagePullPolicy: {{ .Values.image.pullPolicy }}
+            env:
+              - name: NAMESPACE
+                value: "{{ .Values.env.namespace }}"
+              - name: DEPLOYMENT
+                value: "{{ .Values.env.deployment }}"
+              - name: REGISTRY
+                value: "{{ .Values.env.registry }}"
+            # volumeMounts:
+              # - name: credentials
+                # mountPath: /root/.aws/credentials
+                # subPath: credentials
+              # - name: credentials
+                # mountPath: /root/.aws/config
+                # subPath: config
+          restartPolicy: OnFailure
+          # volumes:
+            # - name: credentials
+              # configMap:
+                # name: {{ include "k8s-ecr-watch.fullname" . }}
+
