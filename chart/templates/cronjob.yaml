@@ -15,6 +15,7 @@ spec:
             sidecar.istio.io/inject: "false"
         spec:
           serviceAccountName: {{ include "k8s-ecr-watch.serviceAccountName" . }}
+          restartPolicy: OnFailure
           containers:
           - name: {{ .Chart.Name }}
             image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -26,16 +27,21 @@ spec:
                 value: "{{ .Values.env.deployment }}"
               - name: REGISTRY
                 value: "{{ .Values.env.registry }}"
-            # volumeMounts:
-              # - name: credentials
-                # mountPath: /root/.aws/credentials
-                # subPath: credentials
-              # - name: credentials
-                # mountPath: /root/.aws/config
-                # subPath: config
-          restartPolicy: OnFailure
-          # volumes:
-            # - name: credentials
-              # configMap:
-                # name: {{ include "k8s-ecr-watch.fullname" . }}
-
+            {{- if .Values.assumeRole.create }}
+              - name: ASSUME_ROLE
+                value: "true"
+            volumeMounts:
+              - name: credentials
+                mountPath: /root/.aws/credentials
+                subPath: credentials
+              - name: credentials
+                mountPath: /root/.aws/config
+                subPath: config
+              - name: credentials
+                mountPath: /root/.aws/assume_role
+                subPath: assume_role
+          volumes:
+            - name: credentials
+              configMap:
+                name: {{ include "k8s-ecr-watch.fullname" . }}
+            {{- end }}

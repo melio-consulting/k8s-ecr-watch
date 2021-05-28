@@ -5,16 +5,19 @@
 replicaCount: 1
 
 image:
-  repository: 901498207434.dkr.ecr.eu-west-1.amazonaws.com/utility/k8s-ecr-watch
+  repository: melioai/k8s-ecr-watch
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
 schedule: "*/5 * * * *"
 env:
-  namespace: "management-portal"
-  deployment: "management-portal-backend"
-  registry: "901498207434"
+  # namespace where the pod monitored is running
+  namespace: ""
+  # name of the deployment
+  deployment: ""
+  # AWS Account ID of the ECR registry (can be the same as the account that EKS sits)
+  registry: "87654321"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -22,11 +25,9 @@ fullnameOverride: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
-  create: true
+  create: false
   # Annotations to add to the service account
-  annotations:
-    eks.amazonaws.com/role-arn: "arn:aws:iam::518594123872:role/eks-ecr-readonly"
-
+  annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: "ecr-readonly"
@@ -62,18 +63,24 @@ tolerations: []
 
 affinity: {}
 
+assumeRole:
+  create: false
+
 configmap:
+  # File containing the role that the k8s-ecr-watch pod will assume
+  assume_role: "arn:aws:iam::987654321:role/ECRReadOnlyRole"
+  # TODO Can assume role base on the below credentials - can't get it to work
   credentials: |-
     [profile dev]
-    role_arn = arn:aws:iam::518594123872:role/eks-ecr-readonly
+    role_arn = arn:aws:iam::123456789:role/eks-ecr-readonly
     web_identity_token_file = /var/run/secrets/eks.amazonaws.com/serviceaccount/token
 
-    [profile infra]
-    role_arn = arn:aws:iam::901498207434:role/ECRReadOnlyRole
+    [profile shared]
+    role_arn = arn:aws:iam::987654321:role/ECRReadOnlyRole
     source_profile = dev
     role_session_name = ECRReadOnly
   config: |-
-    [profile infra]
+    [profile shared]
     region = eu-west-1
 
 

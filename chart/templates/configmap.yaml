@@ -1,8 +1,12 @@
+{{- if .Values.assumeRole.create -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ include "k8s-ecr-watch.fullname" . }}
 data:
+  {{- with .Values.configmap.assume_role }}
+  assume_role: {{ . }}
+  {{- end}}
   {{- with .Values.configmap.credentials }}
   credentials: |-
 {{ tpl . $ | indent 4 }}
@@ -11,3 +15,4 @@ data:
   config: |-
 {{ tpl . $ | indent 4 }}
   {{- end }}
+{{- end}}
