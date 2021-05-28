@@ -3,10 +3,6 @@ LABEL description="An utility image that checks for changes to image tags in AWS
 
 RUN apk upgrade --update
 
-# ENV TIME_ZONE Africa/Johannesburg
-# RUN apk add tzdata && \
-    # echo "$TIME_ZONE" > /etc/timezone
-
 RUN apk add \
     bash \
     curl \
@@ -29,5 +25,6 @@ RUN chmod +x /app/run.sh
 ENV NAMESPACE ""
 ENV DEPLOYMENT ""
 ENV REGISTRY ""
+ENV ASSUME_ROLE ""
 
 CMD ["bash", "-c", "/app/run.sh"]

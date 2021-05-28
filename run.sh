@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 
-# SHA=$(kubectl get po -n management-portal -oname | grep management-portal-backend -m 1 \
-  # | xargs -I {} kubectl get {} -n management-portal -ogo-template --template '{{(index .status.containerStatuses 0).imageID}}' \
-  # | sed -n "s/.*sha256:\(.*\)$/\1/p")
-
 IMAGE_RESULTS=$(kubectl get po -n "$NAMESPACE" -oname | grep "$DEPLOYMENT" -m 1 \
   | xargs -I {} kubectl get {} -n "$NAMESPACE" -ogo-template --template '{{(index .status.containerStatuses 0).image}} {{(index .status.containerStatuses 0).imageID}}')
 
@@ -22,11 +18,16 @@ echo "Current Image: ${IMAGE}"
 echo "Current ImageDigest: ${IMAGE_DIGEST}"
 echo "Registry: ${REGISTRY}"
 
-ASSUMED_CREDS=$(aws sts assume-role --role-arn arn:aws:iam::901498207434:role/ECRReadOnlyRole --role-session-name Test)
-echo "$ASSUMED_CREDS"
-export AWS_ACCESS_KEY_ID=$(echo "${ASSUMED_CREDS}" | jq -r .Credentials.AccessKeyId)
-export AWS_SECRET_ACCESS_KEY=$(echo "${ASSUMED_CREDS}" | jq -r .Credentials.SecretAccessKey)
-export AWS_SESSION_TOKEN=$(echo "${ASSUMED_CREDS}" | jq -r .Credentials.SessionToken)
+if [ "${ASSUME_ROLE}" = true ]; then
+  ASSUME_ROLE=`cat /root/.aws/assume_role` 
+  echo "Assuming Role: ${ASSUME_ROLE}"
+  ASSUMED_CREDS=$(aws sts assume-role --role-arn "${ASSUME_ROLE}" --role-session-name k8s-ecr-watch)
+  if [ -z "${ASSUMED_CREDS}" ]; then echo "Assumable role does not exist, did you mount it at /root/.aws/assume_role?"; exit 0; fi
+  export AWS_ACCESS_KEY_ID=$(echo "${ASSUMED_CREDS}" | jq -r .Credentials.AccessKeyId)
+  export AWS_SECRET_ACCESS_KEY=$(echo "${ASSUMED_CREDS}" | jq -r .Credentials.SecretAccessKey)
+  export AWS_SESSION_TOKEN=$(echo "${ASSUMED_CREDS}" | jq -r .Credentials.SessionToken)
+  echo "Assume Role successful!"
+fi
 
 ECR_IMAGE=$(aws ecr list-images --repository-name "${IMAGE_REPOSITORY}" --registry "${REGISTRY}" | jq --arg IMAGE_TAG "${IMAGE_TAG}" '.imageIds[] | select(.imageTag | contains($IMAGE_TAG))')
 
