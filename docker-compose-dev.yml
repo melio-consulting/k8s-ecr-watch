@@ -1,0 +1,10 @@
+version: '3.7'
+services:
+  test:
+    image: melioai/k8s-ecr-watch:latest
+    volumes:
+      - ./:/app
+      - ./configmap-test:/root/.aws/assume_role:ro
+    env_file: .env
+    command: ["/bin/sh", "-c", "while true; do echo hello; sleep 30; done"]
+    container_name: k8s_ecr_watch
