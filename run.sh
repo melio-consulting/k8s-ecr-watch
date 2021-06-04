@@ -29,7 +29,7 @@ if [ "${ASSUME_ROLE}" = true ]; then
   echo "Assume Role successful!"
 fi
 
-ECR_IMAGE=$(aws ecr list-images --repository-name "${IMAGE_REPOSITORY}" --registry "${REGISTRY}" | jq --arg IMAGE_TAG "${IMAGE_TAG}" '.imageIds[] | select(.imageTag | contains($IMAGE_TAG))')
+ECR_IMAGE=$(aws ecr list-images --repository-name "${IMAGE_REPOSITORY}" --registry "${REGISTRY}" | jq --arg IMAGE_TAG "${IMAGE_TAG}" '.imageIds[] | select(.imageTag != null) | select(.imageTag | contains($IMAGE_TAG))')
 
 if [ -z "${ECR_IMAGE}" ]; then
   echo "Tag does not exist in ECR."
